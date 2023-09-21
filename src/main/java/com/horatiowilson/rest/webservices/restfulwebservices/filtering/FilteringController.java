@@ -8,7 +8,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 public class FilteringController {
@@ -29,8 +33,18 @@ public class FilteringController {
     }
 
     @GetMapping("/filtering-list")
-    public List<SomeBean> filteringList() {
-        return Arrays.asList(new SomeBean("value1", "value2", "value3", "value4"),
+    public MappingJacksonValue filteringList() {
+        List<SomeBean> list = Arrays.asList(new SomeBean("value1", "value2", "value3", "value4"),
                 new SomeBean("value5", "value6", "value7", "value8"));
+        return getMappingJacksonValue(list, Stream.of("field3", "field4")
+                .collect(Collectors.toCollection(HashSet::new)));
+    }
+
+    private MappingJacksonValue getMappingJacksonValue(List<SomeBean> list, Set<String> filterList) {
+        MappingJacksonValue mappingJacksonValue = new MappingJacksonValue(list);
+        SimpleBeanPropertyFilter filter = SimpleBeanPropertyFilter.filterOutAllExcept(filterList);
+        FilterProvider filters = new SimpleFilterProvider().addFilter("SomeBeanFilter", filter);
+        mappingJacksonValue.setFilters(filters);
+        return mappingJacksonValue;
     }
 }
